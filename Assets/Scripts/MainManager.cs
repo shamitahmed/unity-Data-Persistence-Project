@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,14 +13,20 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public Text nameText;
+    public Text highscoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
     private int m_Points;
-    
+    public int highscore;
     private bool m_GameOver = false;
 
-    
+    [System.Serializable]
+    class SaveData
+    {
+        public int highscore;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -37,7 +44,11 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        LoadScore();
+
         nameText.text = "Name: "+ UIManager.nameString;
+        highscoreText.text = "Best Score: " + highscore;  
     }
 
     private void Update()
@@ -68,6 +79,13 @@ public class MainManager : MonoBehaviour
     {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
+
+        if(m_Points > highscore)
+        {
+            highscore = m_Points;
+            highscoreText.text = "Best Score: " + highscore;
+            SaveScore();
+        }
     }
 
     public void GameOver()
@@ -75,5 +93,25 @@ public class MainManager : MonoBehaviour
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+    public void SaveScore()
+    {
+        SaveData data = new SaveData();
+        data.highscore = highscore;
 
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            highscore = data.highscore;
+        }
+    }
 }
